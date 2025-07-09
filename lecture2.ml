@@ -31,7 +31,7 @@ let todo msg = fun _ -> raise (NotImplementedError msg) [@@warning "-27"]
 
 
 
-(* In the last class we say native type int *)
+(* In the last class we saw native type int *)
 
 let x : int = 5
 let y : int = 2
@@ -80,7 +80,19 @@ let a = float_of_int 5
 let b = int_of_float 3.7
 let c = int_of_float (-3.7)
 
-let d = 3 + 0.1
+(* If n is an int, 
+
+    then this is true: float_to_int (int_to_float (n)) == n
+
+
+  If m is a float, then this may not be true:
+  
+  int_to_float (float_to_int (m)) == m
+
+
+*)
+
+let d = 3.0 +. 0.1
 
 
 
@@ -162,8 +174,13 @@ let lower_bound = min_int
     
     Ariane flight V88 carried the Cluster spacecraft, a constellation of four 
     European Space Agency research satellites. Their code had inadequate 
-    protection against integer overflow. This caused the rocket to veer off 
-    and finally self-destruct. Caused a loss of US$370 million.
+    protection against integer overflow. 
+
+    meters = radians * 6378137.0 / pi
+
+    The problem was the conversion from radians to meters was done using 
+    integer arithmetic, which caused an overflow. This made the rocket to veer 
+    off and finally self-destruct. Caused a loss of US$370 million.
 *)
 
 
@@ -285,7 +302,7 @@ type nat = Zero | One | Two | Three | Four | Five | Six | Seven | Eight | Nine
 (* 2. For every natural number n, Succ n is a natural number *)
 (*  How do we capture this? *)
 
-
+type nat = Zero | Succ of nat 
 
 (* 3. 0 is not the successor of any natural number 
       There is no n such that Succ n = Zero *)
@@ -306,6 +323,8 @@ type nat = Zero | One | Two | Three | Four | Five | Six | Seven | Eight | Nine
 
 
 type nat = Zero | Succ of nat
+
+
 
 let a : nat = Succ (Succ (Succ (Succ (Succ (Zero)))))
 let b : nat = Succ (Succ (Succ (Succ (Zero))))
@@ -329,17 +348,87 @@ let plusThree (n : nat) : nat = Succ (Succ (Succ n))
 
 let plusThree (n : nat) : nat = Succ (plusTwo n)
 
+let plusFour (n : nat) : nat = Succ (plusThree n)
+let plusFive (n : nat) : nat = Succ (plusFour n)
 
 
 
-let plus_succk (n : nat) : nat = Succ (plus_k n) 
+(* let plus_succ_k (n : nat) : nat = Succ (plus_k n) *)
+
 
 
        
 let rec plus (k : nat) (n : nat) : nat = 
   match k with 
   | Zero -> n
-  | Succ k2 -> Succ (plus k2 m)
+  | Succ k2 -> Succ (plus k2 n) 
+
+(* Sample run: 
+
+    plus 3 2 = plus (Succ (Succ (Succ Zero))) (Succ (Succ Zero))
+            = Succ (plus (Succ (Succ Zero)) (Succ (Succ Zero)))
+            = Succ (Succ (plus (Succ Zero) (Succ (Succ Zero))))
+            = Succ (Succ (Succ (plus Zero (Succ (Succ Zero))))
+            = Succ (Succ (Succ (Succ (Succ Zero)))
+
+*)
+
+
+
+
+
+(* Another way: *)
+
+let rec plus2 (k : nat) (n : nat) : nat = 
+  match k with 
+  | Zero -> n
+  | Succ k2 -> (plus k2 (Succ n))
+
+(* Sample run: 
+
+    plus 3 2 = Succ (plus 2 2)
+            = Succ (Succ (plus 1 2))
+            = Succ (Succ (Succ (plus 0 2)))
+            = Succ (Succ (Succ (2))
+
+    plus2 3 2 = plus2 2 (Succ 2)
+             = plus2 1 (Succ (Succ 2))
+             = plus2 0 Succ (Succ (Succ 2))
+             = Succ (Succ (Succ 2))
+            
+
+*)
+
+
+(* Exercise: 
+
+
+let rec plus (k : nat) (n : nat) : nat = 
+  match k with 
+  | Zero -> n
+  | Succ k2 -> Succ (plus k2 n) 
+
+let rec plus2 (k : nat) (n : nat) : nat = 
+  match k with 
+  | Zero -> n
+  | Succ k2 -> (plus k2 (Succ n))
+
+  Prove that plus k n = plus2 k n 
+
+    If k = Zero, then we are returning n in both cases. Hence ...
+
+    Inductive Hypothesis: 
+     for all n : nat, assume plus k2 n = plus2 k2 n holds
+
+    Inductive Step: show plus (Succ k2) m = plus2 (Succ k2) m
+
+    LHS = Succ (plus k2 m)
+    RHS = plus2 k2 (Succ m)
+
+*)
+
+
+
 
 
 (* Is this addition necessarily correct? *)
