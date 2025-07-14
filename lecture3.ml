@@ -196,7 +196,6 @@ let rec div (n: nat) (m: nat): nat =
     match n with
     | Zero -> Zero
     | _ -> Succ (div (minus n m) m)
-;;
 
 (* IDEA: n / m = 1 + ((n - m)/m) *)
 
