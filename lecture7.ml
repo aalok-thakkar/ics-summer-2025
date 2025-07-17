@@ -176,35 +176,38 @@ let rec pos_sum (l : int list) : int =
     | false -> pos_sum(t)
 
 
+let rec neg_sum (l : int list) : int = 
+  match l with 
+  | [] -> 0
+  | h :: t -> 
+    match (h < 0) with 
+    | true -> h + neg_sum (t)
+    | false -> neg_sum(t)
+
+    
 
 
 
 (* Find minimum *)
-exception EmptyListUnexpected;;
+exception EmptyListUnexpected
 
-let rec findmin (l: int list) : int option =
-  match l with
-  | [] -> None
-  | [h] -> Some h
-  | h :: t -> 
-      match findmin t with
-      | None -> raise EmptyListUnexpected                  (* This case would never be matched. *)
-      | Some min_t -> Some (
-        match h with
-        | _ when h < min_t -> h 
-        | _ -> min_t)
+let min (a : int) (b : int) : int = 
+  match (a < b) with
+  | true -> a 
+  | false -> b
 
+let max (a : int) (b : int) : int = 
+  match (a > b) with
+  | true -> a 
+  | false -> b
 
-(* One can also just simplify this code: *)
-
-let rec findmin_simple (l: int list) : int option =
+let rec findmax (l: int list) : int option =
   match l with
   | [] -> None
   | h :: t -> 
-      match findmin_simple t with
-      | None -> Some h
-      | Some min_t -> Some (if h < min_t then h else min_t)
-
+      match (findmax t) with
+      | None -> h
+      | Some minimum_element_in_t -> max h (minimum_element_in_t)
 
 
 
@@ -216,13 +219,18 @@ let rec findmin_simple (l: int list) : int option =
 
 let eval_poly (x: int) : int = (x*x) - (4*x) + 2 
 
-let rec findopt_poly (l: int list) : int option =
+let mycompare (a : int) (b: int) : int = 
+  match (eval_poly a < eval_poly b) with
+  | true -> a
+  | false -> b
+
+let rec findmin_poly (l: int list) : int option =
   match l with
   | [] -> None
   | h :: t -> 
       match findopt_poly t with
       | None -> Some h
-      | Some min_t -> Some (if (eval_poly h) < (eval_poly min_t) then h else min_t)
+      | Some min_t -> mycompare (h) (min_t)
 
 
 (* This function parallels find_min_simple. Instead of writing a function every time, it would be cool to get a general function: 
@@ -233,15 +241,20 @@ For a fixed comparison function, we could write:
 
 *)
 
-let compare_poly (x: int) (y: int) : bool = (eval_poly x) < (eval_poly y) 
-
-let rec findopt_gen (l: int list) : int option =
+let rec findopt_general (compare: int -> int -> int) (l: int list) : int option =
   match l with
   | [] -> None
   | h :: t -> 
-      match findopt_gen t with
+      match findopt_poly t with
       | None -> Some h
-      | Some min_t -> Some (if (compare_poly h min_t) then h else min_t)
+      | Some min_t -> compare (h) (min_t)
+
+
+let findmin l = findopt_general min l 
+let findmax l = findopt_general max l 
+let findpolymin l = findopt_general compare_poly l 
+
+
 
 
 (* Can we pass compare_poly as a parameter to findopt_gen? Yes! Using higher order functions. *)
@@ -253,18 +266,27 @@ let rec findopt_gen (l: int list) : int option =
 
 let apply (f: 'a -> 'b) (x: 'a) : 'b  = f x 
 
+let apply_twice (f: 'a -> 'a) (x: 'a) : 'a = f (f x)
+
+let rec apply_k_times (f: int -> int) (x: int) (k : int ) : int = 
+  match k with 
+  | 0 -> x
+  | 1 -> f x 
+  | _ where k > 0 -> f (apply_k_times f x (k - 1))
+  | _ -> failwith "k is negative"
+
+
+(* apply_k_times f x 2 
+   = f (apply_k_times f x 1)
+   = f (f x)      *)
+
+
+
 (* This is useless as putting x next to f automatically applies f to x. However, this gives us an example of a higher order function. *)
 
 
 (* Similar to this, we can now define a findopt as: *)
 
-let rec findopt (compare: int -> int -> bool) (l: int list) : int option =
-  match l with
-  | [] -> None
-  | h :: t -> 
-      match (findopt compare t) with
-      | None -> Some h
-      | Some min_t -> Some (if (compare h min_t) then h else min_t)
 
 
 
@@ -297,10 +319,35 @@ let rec findopt (compare: int -> int -> bool) (l: int list) : int option =
   map: ('a -> 'b) -> 'a list -> 'b list
 *)
 
+(* map ((+) 3) [2;6;8] = [5;9;11])
+    map (( * ) 2) [2;6;8] = [4;12;16])
+    
+    *)
+
+let rec map1 (l : int list) : int list = 
+  match l with 
+  | [] -> []
+  | h :: t -> (h + 3) :: (map1 tail)
+
+let rec map2 (l : int list) : int list = 
+  match l with 
+  | [] -> []
+  | h :: t -> (h * 2) :: (map1 tail)
+
+
+
+
 let rec map (f: 'a -> 'b) (l: 'a list) : 'b list =
   match l with
   | [] -> []
   | h :: t -> (f h) :: (map f t)
+
+let double (x : int) = x * 2 
+
+(* map2 l = map (double) l    *)
+
+
+
 
 
 (* Let us consider another operation on lists: *)
@@ -308,10 +355,20 @@ let rec map (f: 'a -> 'b) (l: 'a list) : 'b list =
 let rec even_only (l: int list) : int list =
   match l with
   | [] -> []
-  | x :: xs -> 
-      match x mod 2 with
-      | 0 -> x :: even_only xs
-      | _ -> even_only xs
+  | h :: t -> 
+      match (h mod 2) with
+      | 0 -> h :: even_only t
+      | _ -> even_only t
+
+let rec odd_only (l: int list) : int list =
+  match l with
+  | [] -> []
+  | h :: t -> 
+      match (h mod 2) with
+      | 1 -> h :: even_only t
+      | _ -> even_only t
+
+
 
 
 assert(even_only [3; 5; 7] = [])
@@ -324,13 +381,21 @@ Say for example, filter (is_even) l = even_only l
 
 We can implement filter as: *)
 
+
+
+
+(* Let us say we have a predicate. It checks whether our element satisfies some property, like being even. *)
+
 let rec filter (pred: 'a -> bool) (l: 'a list) : 'a list =
   match l with
   | [] -> []
-  | x :: xs -> 
-    match pred x with
-    | true -> x :: filter pred xs
-    | false -> filter pred xs
+  | h :: t -> 
+    match pred h with
+    | true -> h :: filter pred t
+    | false -> filter pred t
+
+
+
 
 
 (* Now let us use filters! *)
@@ -338,7 +403,24 @@ let rec filter (pred: 'a -> bool) (l: 'a list) : 'a list =
 (* Find all divisors of a number *)
 (* divisors 12 = [1; 2; 3; 4; 6; 12] *)
 
+
+
 let is_divisor (n: int) (x: int) : bool = (x mod n = 0)
+
+let rec create_range (a : int) : int list = 
+  match a with 
+  | 0 -> []
+  | _ when (a > 0) -> a :: create_range (a - 1) 
+  | _ -> failwith "input is negative"
+
+let divisors (n : int) : int list = 
+  match n with 
+  | n when n > 0 -> reverse (filter (is_divisor n) (create_range n))
+  | _ -> failwith "input is non positive"
+
+
+
+
 
 (* range a b = [a; ...; b]*)
 let rec range (a: int) (b: int) : int list =
@@ -365,6 +447,9 @@ let divisors (n: int) : int list = filter (is_divisor n) (range 1 n)
 
 (* Observe that this is basically constructing the set: 
    { x| x in [1; ...; n] and (is_divisor n x) }
+
+   filter creates this list:
+  = [ x | (x in l) and (p x = true) ]
 *)
 
 (* Can we use it for primality testing? *)
@@ -378,7 +463,7 @@ let is_prime (x: int) : bool = (divisors x = [1; x])
    [2; 2; 1] <> [2; 1]
  *)
 
-(* Generate all primes less than a number n *)
+(* Generate all primes less than or equal to a number n *)
 (* All primes in [1; ...; n] = range 1 n *)
 let primes (n: int) : int list = filter is_prime (range 1 n)
 
@@ -403,7 +488,69 @@ We first write it down mathematically:
   And we are done!
 *)
 
-(* How do you construct all_triples? *)
+let rec range (a : int) (b : int) : int list = 
+  match (a > b) with
+  | true -> []
+  | false -> a :: range (a + 1) b 
+
+let all_num_under (n: int) : int list = range 1 n
+
+
+(* I want [(a, b) | a <- all_num_under n ; b <- all_num_under n ] *)
+(* For example, all_pairs_under 4 = [(1,1), (1, 2), (1, 3), (1, 4)
+                                     (2,1), (2, 2), (2, 3), (2, 4)
+                                     (3,1), (3, 2), (3, 3), (3, 4)
+                                     (4,1), (4, 2), (4, 3), (4, 4) ]*)
+
+let all_pairs_under (n: int) : (int * int) list = todo "Implement This"
+
+(* Can you write: 
+
+    all_pairs_under (n: int) (m: int) = 
+                    [(a, b) | a <- all_num_under n ; b <- all_num_under m ]
+    
+
+    all_pairs_under 3 4 = [(1,1), (1, 2), (1, 3), (1, 4)
+                           (2,1), (2, 2), (2, 3), (2, 4)
+                           (3,1), (3, 2), (3, 3), (3, 4) ]
+
+    Say I have all_pairs_under n m, can I use it to construct all pairs under n (m + 1)? Alternatively, can I go from all_pairs_under n m to all_pairs_under (n + 1) m?
+                    
+   all_pairs_under 3 5 = (all_pairs_under 3 4) @ [(1, 5), (2, 5), (3, 5)]
+
+   let pair_with_5 (x : int) : int * int = (x , 5)
+
+   all_pairs_under 3 5 = (all_pairs_under 3 4) @ (map pair_with_5 (all_num_under 3))
+*)
+
+let pair_with (k: int) (n: int) : int * int = (k , n)
+
+let rec pairs_under (n: int) (m: int) : int * int list = 
+  match n with
+  | _ when n <= 0 -> [] 
+  | _ -> (map (pair_with n) (range 1 m)) @ (pairs_under (n - 1) m)
+
+
+(* pairs_under 2 3
+ = (map pair_with 2 (range 1 3)) @ (pairs_under 1 3)
+ = (map pair_with 2 [1; 2; 3]) @ (pairs_under 1 3)
+ = [(2, 1); (2, 2); (2, 3)] @ (pairs_under 1 3)
+ = [(2, 1); (2, 2); (2, 3)] @ (map pair_with 1 (range 1 3))
+ = [(2, 1); (2, 2); (2, 3)] @ (map pair_with 1 [1; 2; 3])
+ = [(2, 1); (2, 2); (2, 3)] @ [(1, 1); (1, 2); (1, 3)]
+ = [(2, 1); (2, 2); (2, 3); (1, 1); (1, 2); (1, 3)]
+*)
+
+
+let triple_with (p : int) ((n,m) : int * int) : int * int * int = (n, m, p)
+
+let rec triples_under (n : int) (m : int) (p : int) : (int * int * int) with =
+  match p with 
+  | _ when p <= 0 -> []
+  | _ -> map (triple_with p) (pairs_under n m) @ (triples_under n m (p - 1))
+
+
+(* You can also try for cartesian product: *)
 
 (* Here is a first try: *)
 
