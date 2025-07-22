@@ -727,3 +727,16 @@ let sumlist l = foldr add 0 l
 = 6
 *)
 
+
+let rec all_pairs_under (m: int) (p: int) : (int * int) list = 
+  match m with 
+  | _ when m <= 0 -> []
+  | _ -> (map (fun x -> (m, x)) (range 0 p)) @ all_pairs_under (m - 1) p
+
+let rec all_triples_under (n : int) (m: int) (p: int) : (int * int * int) list = 
+  match n with 
+  | _ when n <= 0 -> []
+  | _ -> (map (fun (x, y) -> (n, x, y)) (all_pairs m p)) @ all_triples_under (n - 1) m p
+
+let all_pythagorean_triples (n : int) : (int * int * int) list = 
+  map (fun (x, y, z) -> (x^2 + y^2 = z^2)) (all_triples_under n n n)
