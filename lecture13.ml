@@ -1,4 +1,4 @@
-(* Lecture 12: The While Loop *)
+(* Lecture 13: The While Loop *)
 
 
 (* The Integer Square Root Question *)
