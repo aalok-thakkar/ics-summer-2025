@@ -183,7 +183,7 @@ for i in range(2, int(sqrt(n)) + 1):
 
 # More Funny Business!
 
-l = ["1", "2", True, False, "BLAHA", 23232]
+l = [1, 2, 3, 4, 5, 6]
 for x in l:
     l.remove(x)
 print(l)
