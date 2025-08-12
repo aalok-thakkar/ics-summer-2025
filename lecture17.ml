@@ -193,10 +193,29 @@ b.(0) <- 9 ;;       (* Now a.(0) is also 9 *)
 
 
 
+
+
+
+
+
+
 (* Write selection sort and insertion sort for arrays *)
 
 
 
+
+
+let max (a : int array) : int option = 
+  let n = (Array.length a) in 
+  let i = ref 0 in 
+  let current_max = ref None in
+  while (!i <> n) do
+    ??
+    i := i + 1; 
+  done
+  !current_max
+;;
+  
 
 
 
